@@ -1,0 +1,1098 @@
+{
+  "machines": [
+    {
+      "machine_id": "GPU",
+      "cpu_capacity": 96,
+      "ram_capacity": 384,
+      "cost_per_hour": 45,
+      "concurrency": 8
+    },
+    {
+      "machine_id": "CPU_OPT",
+      "cpu_capacity": 64,
+      "ram_capacity": 128,
+      "cost_per_hour": 18,
+      "concurrency": 16
+    },
+    {
+      "machine_id": "MEM_OPT",
+      "cpu_capacity": 32,
+      "ram_capacity": 512,
+      "cost_per_hour": 22,
+      "concurrency": 12
+    },
+    {
+      "machine_id": "CHEAP",
+      "cpu_capacity": 16,
+      "ram_capacity": 64,
+      "cost_per_hour": 8,
+      "concurrency": 20
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": "J000_NOTIFY",
+      "priority": "high",
+      "deadline": 37,
+      "dependencies": []
+    },
+    {
+      "job_id": "J001_NOTIFY",
+      "priority": "high",
+      "deadline": 37,
+      "dependencies": []
+    },
+    {
+      "job_id": "J002_DB_READ",
+      "priority": "high",
+      "deadline": 60,
+      "dependencies": []
+    },
+    {
+      "job_id": "J003_AUTH",
+      "priority": "medium",
+      "deadline": 60,
+      "dependencies": []
+    },
+    {
+      "job_id": "J004_AGGREGATE",
+      "priority": "critical",
+      "deadline": 25,
+      "dependencies": []
+    },
+    {
+      "job_id": "J005_TRANSFORM",
+      "priority": "critical",
+      "deadline": 26,
+      "dependencies": [
+        "J002_DB_READ",
+        "J001_NOTIFY"
+      ]
+    },
+    {
+      "job_id": "J006_AUTH",
+      "priority": "high",
+      "deadline": 45,
+      "dependencies": [
+        "J002_DB_READ"
+      ]
+    },
+    {
+      "job_id": "J007_AGGREGATE",
+      "priority": "medium",
+      "deadline": 64,
+      "dependencies": []
+    },
+    {
+      "job_id": "J008_AGGREGATE",
+      "priority": "high",
+      "deadline": 48,
+      "dependencies": [
+        "J002_DB_READ",
+        "J000_NOTIFY"
+      ]
+    },
+    {
+      "job_id": "J009_NOTIFY",
+      "priority": "medium",
+      "deadline": 50,
+      "dependencies": [
+        "J001_NOTIFY",
+        "J004_AGGREGATE"
+      ]
+    },
+    {
+      "job_id": "J010_TRANSFORM",
+      "priority": "high",
+      "deadline": 52,
+      "dependencies": []
+    },
+    {
+      "job_id": "J011_AGGREGATE",
+      "priority": "high",
+      "deadline": 48,
+      "dependencies": [
+        "J008_AGGREGATE"
+      ]
+    },
+    {
+      "job_id": "J012_AUTH",
+      "priority": "medium",
+      "deadline": 60,
+      "dependencies": [
+        "J009_NOTIFY"
+      ]
+    },
+    {
+      "job_id": "J013_DB_READ",
+      "priority": "medium",
+      "deadline": 80,
+      "dependencies": []
+    },
+    {
+      "job_id": "J014_ML_INFER",
+      "priority": "high",
+      "deadline": 120,
+      "dependencies": [
+        "J007_AGGREGATE",
+        "J005_TRANSFORM"
+      ]
+    },
+    {
+      "job_id": "J015_DB_READ",
+      "priority": "low",
+      "deadline": -1,
+      "dependencies": []
+    },
+    {
+      "job_id": "J016_ML_INFER",
+      "priority": "high",
+      "deadline": 120,
+      "dependencies": []
+    },
+    {
+      "job_id": "J017_TRANSFORM",
+      "priority": "critical",
+      "deadline": 26,
+      "dependencies": [
+        "J013_DB_READ"
+      ]
+    },
+    {
+      "job_id": "J018_ML_INFER",
+      "priority": "medium",
+      "deadline": 160,
+      "dependencies": [
+        "J010_TRANSFORM"
+      ]
+    },
+    {
+      "job_id": "J019_AUTH",
+      "priority": "medium",
+      "deadline": 60,
+      "dependencies": []
+    },
+    {
+      "job_id": "J020_AGGREGATE",
+      "priority": "high",
+      "deadline": 48,
+      "dependencies": [
+        "J017_TRANSFORM",
+        "J016_ML_INFER"
+      ]
+    },
+    {
+      "job_id": "J021_TRANSFORM",
+      "priority": "critical",
+      "deadline": 26,
+      "dependencies": [
+        "J018_ML_INFER",
+        "J019_AUTH"
+      ]
+    },
+    {
+      "job_id": "J022_ML_INFER",
+      "priority": "low",
+      "deadline": -1,
+      "dependencies": [
+        "J018_ML_INFER",
+        "J016_ML_INFER"
+      ]
+    },
+    {
+      "job_id": "J023_AGGREGATE",
+      "priority": "low",
+      "deadline": -1,
+      "dependencies": [
+        "J016_ML_INFER"
+      ]
+    },
+    {
+      "job_id": "J024_ML_INFER",
+      "priority": "medium",
+      "deadline": 160,
+      "dependencies": []
+    },
+    {
+      "job_id": "J025_NOTIFY",
+      "priority": "critical",
+      "deadline": 22,
+      "dependencies": [
+        "J024_ML_INFER",
+        "J022_ML_INFER"
+      ]
+    },
+    {
+      "job_id": "J026_NOTIFY",
+      "priority": "high",
+      "deadline": 37,
+      "dependencies": [
+        "J024_ML_INFER",
+        "J023_AGGREGATE"
+      ]
+    },
+    {
+      "job_id": "J027_ML_INFER",
+      "priority": "low",
+      "deadline": -1,
+      "dependencies": [
+        "J023_AGGREGATE",
+        "J022_ML_INFER"
+      ]
+    },
+    {
+      "job_id": "J028_DB_READ",
+      "priority": "low",
+      "deadline": -1,
+      "dependencies": []
+    },
+    {
+      "job_id": "J029_TRANSFORM",
+      "priority": "high",
+      "deadline": 52,
+      "dependencies": []
+    }
+  ],
+  "predictions": [
+    {
+      "job_id": "J000_NOTIFY",
+      "machine_id": "GPU",
+      "pred_duration": 1.43,
+      "pred_cpu": 30.35,
+      "pred_ram": 7.09
+    },
+    {
+      "job_id": "J000_NOTIFY",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 4.46,
+      "pred_cpu": 17.99,
+      "pred_ram": 5.49
+    },
+    {
+      "job_id": "J000_NOTIFY",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 3.32,
+      "pred_cpu": 15.57,
+      "pred_ram": 12.41
+    },
+    {
+      "job_id": "J000_NOTIFY",
+      "machine_id": "CHEAP",
+      "pred_duration": 11.91,
+      "pred_cpu": 10.37,
+      "pred_ram": 3.78
+    },
+    {
+      "job_id": "J001_NOTIFY",
+      "machine_id": "GPU",
+      "pred_duration": 1.43,
+      "pred_cpu": 30.35,
+      "pred_ram": 7.09
+    },
+    {
+      "job_id": "J001_NOTIFY",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 4.46,
+      "pred_cpu": 17.99,
+      "pred_ram": 5.49
+    },
+    {
+      "job_id": "J001_NOTIFY",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 3.32,
+      "pred_cpu": 15.57,
+      "pred_ram": 12.41
+    },
+    {
+      "job_id": "J001_NOTIFY",
+      "machine_id": "CHEAP",
+      "pred_duration": 11.91,
+      "pred_cpu": 10.37,
+      "pred_ram": 3.78
+    },
+    {
+      "job_id": "J002_DB_READ",
+      "machine_id": "GPU",
+      "pred_duration": 5.88,
+      "pred_cpu": 75.19,
+      "pred_ram": 27.82
+    },
+    {
+      "job_id": "J002_DB_READ",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 18.42,
+      "pred_cpu": 55.39,
+      "pred_ram": 21.37
+    },
+    {
+      "job_id": "J002_DB_READ",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 13.35,
+      "pred_cpu": 41.81,
+      "pred_ram": 46.93
+    },
+    {
+      "job_id": "J002_DB_READ",
+      "machine_id": "CHEAP",
+      "pred_duration": 50.43,
+      "pred_cpu": 28.93,
+      "pred_ram": 14.34
+    },
+    {
+      "job_id": "J003_AUTH",
+      "machine_id": "GPU",
+      "pred_duration": 3.02,
+      "pred_cpu": 60.05,
+      "pred_ram": 16.66
+    },
+    {
+      "job_id": "J003_AUTH",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.08,
+      "pred_cpu": 38.67,
+      "pred_ram": 12.91
+    },
+    {
+      "job_id": "J003_AUTH",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 6.85,
+      "pred_cpu": 32.54,
+      "pred_ram": 31.56
+    },
+    {
+      "job_id": "J003_AUTH",
+      "machine_id": "CHEAP",
+      "pred_duration": 25.93,
+      "pred_cpu": 22.66,
+      "pred_ram": 8.95
+    },
+    {
+      "job_id": "J004_AGGREGATE",
+      "machine_id": "GPU",
+      "pred_duration": 3.57,
+      "pred_cpu": 64.46,
+      "pred_ram": 18.64
+    },
+    {
+      "job_id": "J004_AGGREGATE",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 11.46,
+      "pred_cpu": 46.31,
+      "pred_ram": 15.84
+    },
+    {
+      "job_id": "J004_AGGREGATE",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 8.01,
+      "pred_cpu": 34.71,
+      "pred_ram": 37.66
+    },
+    {
+      "job_id": "J004_AGGREGATE",
+      "machine_id": "CHEAP",
+      "pred_duration": 33.88,
+      "pred_cpu": 28.73,
+      "pred_ram": 11.26
+    },
+    {
+      "job_id": "J005_TRANSFORM",
+      "machine_id": "GPU",
+      "pred_duration": 4.79,
+      "pred_cpu": 75.24,
+      "pred_ram": 24.25
+    },
+    {
+      "job_id": "J005_TRANSFORM",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 15.6,
+      "pred_cpu": 59.87,
+      "pred_ram": 19.12
+    },
+    {
+      "job_id": "J005_TRANSFORM",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 10.66,
+      "pred_cpu": 42.89,
+      "pred_ram": 43.5
+    },
+    {
+      "job_id": "J005_TRANSFORM",
+      "machine_id": "CHEAP",
+      "pred_duration": 39.7,
+      "pred_cpu": 36.87,
+      "pred_ram": 12.96
+    },
+    {
+      "job_id": "J006_AUTH",
+      "machine_id": "GPU",
+      "pred_duration": 3.11,
+      "pred_cpu": 58.2,
+      "pred_ram": 15.91
+    },
+    {
+      "job_id": "J006_AUTH",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.18,
+      "pred_cpu": 36.77,
+      "pred_ram": 12.78
+    },
+    {
+      "job_id": "J006_AUTH",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 7.0,
+      "pred_cpu": 30.91,
+      "pred_ram": 31.2
+    },
+    {
+      "job_id": "J006_AUTH",
+      "machine_id": "CHEAP",
+      "pred_duration": 25.6,
+      "pred_cpu": 21.44,
+      "pred_ram": 8.67
+    },
+    {
+      "job_id": "J007_AGGREGATE",
+      "machine_id": "GPU",
+      "pred_duration": 3.48,
+      "pred_cpu": 77.25,
+      "pred_ram": 19.7
+    },
+    {
+      "job_id": "J007_AGGREGATE",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.83,
+      "pred_cpu": 49.45,
+      "pred_ram": 15.66
+    },
+    {
+      "job_id": "J007_AGGREGATE",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 7.59,
+      "pred_cpu": 36.48,
+      "pred_ram": 35.56
+    },
+    {
+      "job_id": "J007_AGGREGATE",
+      "machine_id": "CHEAP",
+      "pred_duration": 29.89,
+      "pred_cpu": 28.21,
+      "pred_ram": 11.1
+    },
+    {
+      "job_id": "J008_AGGREGATE",
+      "machine_id": "GPU",
+      "pred_duration": 3.54,
+      "pred_cpu": 73.79,
+      "pred_ram": 18.32
+    },
+    {
+      "job_id": "J008_AGGREGATE",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.97,
+      "pred_cpu": 47.9,
+      "pred_ram": 15.17
+    },
+    {
+      "job_id": "J008_AGGREGATE",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 7.78,
+      "pred_cpu": 35.14,
+      "pred_ram": 34.38
+    },
+    {
+      "job_id": "J008_AGGREGATE",
+      "machine_id": "CHEAP",
+      "pred_duration": 32.33,
+      "pred_cpu": 27.2,
+      "pred_ram": 10.69
+    },
+    {
+      "job_id": "J009_NOTIFY",
+      "machine_id": "GPU",
+      "pred_duration": 1.58,
+      "pred_cpu": 31.19,
+      "pred_ram": 7.56
+    },
+    {
+      "job_id": "J009_NOTIFY",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 4.64,
+      "pred_cpu": 19.03,
+      "pred_ram": 5.71
+    },
+    {
+      "job_id": "J009_NOTIFY",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 3.41,
+      "pred_cpu": 16.67,
+      "pred_ram": 12.81
+    },
+    {
+      "job_id": "J009_NOTIFY",
+      "machine_id": "CHEAP",
+      "pred_duration": 12.17,
+      "pred_cpu": 10.84,
+      "pred_ram": 4.01
+    },
+    {
+      "job_id": "J010_TRANSFORM",
+      "machine_id": "GPU",
+      "pred_duration": 4.59,
+      "pred_cpu": 78.83,
+      "pred_ram": 24.74
+    },
+    {
+      "job_id": "J010_TRANSFORM",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 15.04,
+      "pred_cpu": 59.71,
+      "pred_ram": 19.58
+    },
+    {
+      "job_id": "J010_TRANSFORM",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 10.27,
+      "pred_cpu": 43.32,
+      "pred_ram": 41.79
+    },
+    {
+      "job_id": "J010_TRANSFORM",
+      "machine_id": "CHEAP",
+      "pred_duration": 37.84,
+      "pred_cpu": 36.9,
+      "pred_ram": 13.13
+    },
+    {
+      "job_id": "J011_AGGREGATE",
+      "machine_id": "GPU",
+      "pred_duration": 3.54,
+      "pred_cpu": 73.79,
+      "pred_ram": 18.32
+    },
+    {
+      "job_id": "J011_AGGREGATE",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.97,
+      "pred_cpu": 47.9,
+      "pred_ram": 15.17
+    },
+    {
+      "job_id": "J011_AGGREGATE",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 7.78,
+      "pred_cpu": 35.14,
+      "pred_ram": 34.38
+    },
+    {
+      "job_id": "J011_AGGREGATE",
+      "machine_id": "CHEAP",
+      "pred_duration": 32.33,
+      "pred_cpu": 27.2,
+      "pred_ram": 10.69
+    },
+    {
+      "job_id": "J012_AUTH",
+      "machine_id": "GPU",
+      "pred_duration": 3.02,
+      "pred_cpu": 60.05,
+      "pred_ram": 16.66
+    },
+    {
+      "job_id": "J012_AUTH",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.08,
+      "pred_cpu": 38.67,
+      "pred_ram": 12.91
+    },
+    {
+      "job_id": "J012_AUTH",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 6.85,
+      "pred_cpu": 32.54,
+      "pred_ram": 31.56
+    },
+    {
+      "job_id": "J012_AUTH",
+      "machine_id": "CHEAP",
+      "pred_duration": 25.93,
+      "pred_cpu": 22.66,
+      "pred_ram": 8.95
+    },
+    {
+      "job_id": "J013_DB_READ",
+      "machine_id": "GPU",
+      "pred_duration": 5.71,
+      "pred_cpu": 81.93,
+      "pred_ram": 28.54
+    },
+    {
+      "job_id": "J013_DB_READ",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 18.29,
+      "pred_cpu": 58.35,
+      "pred_ram": 21.71
+    },
+    {
+      "job_id": "J013_DB_READ",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 12.73,
+      "pred_cpu": 43.65,
+      "pred_ram": 48.65
+    },
+    {
+      "job_id": "J013_DB_READ",
+      "machine_id": "CHEAP",
+      "pred_duration": 53.57,
+      "pred_cpu": 30.21,
+      "pred_ram": 14.78
+    },
+    {
+      "job_id": "J014_ML_INFER",
+      "machine_id": "GPU",
+      "pred_duration": 17.17,
+      "pred_cpu": 89.09,
+      "pred_ram": 41.57
+    },
+    {
+      "job_id": "J014_ML_INFER",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 62.92,
+      "pred_cpu": 82.15,
+      "pred_ram": 38.8
+    },
+    {
+      "job_id": "J014_ML_INFER",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 37.0,
+      "pred_cpu": 69.1,
+      "pred_ram": 90.45
+    },
+    {
+      "job_id": "J014_ML_INFER",
+      "machine_id": "CHEAP",
+      "pred_duration": 164.09,
+      "pred_cpu": 41.67,
+      "pred_ram": 25.04
+    },
+    {
+      "job_id": "J015_DB_READ",
+      "machine_id": "GPU",
+      "pred_duration": 5.7,
+      "pred_cpu": 83.22,
+      "pred_ram": 27.14
+    },
+    {
+      "job_id": "J015_DB_READ",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 18.58,
+      "pred_cpu": 55.77,
+      "pred_ram": 20.1
+    },
+    {
+      "job_id": "J015_DB_READ",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 13.25,
+      "pred_cpu": 44.65,
+      "pred_ram": 43.1
+    },
+    {
+      "job_id": "J015_DB_READ",
+      "machine_id": "CHEAP",
+      "pred_duration": 54.37,
+      "pred_cpu": 29.28,
+      "pred_ram": 12.87
+    },
+    {
+      "job_id": "J016_ML_INFER",
+      "machine_id": "GPU",
+      "pred_duration": 17.17,
+      "pred_cpu": 89.09,
+      "pred_ram": 41.57
+    },
+    {
+      "job_id": "J016_ML_INFER",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 62.92,
+      "pred_cpu": 82.15,
+      "pred_ram": 38.8
+    },
+    {
+      "job_id": "J016_ML_INFER",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 37.0,
+      "pred_cpu": 69.1,
+      "pred_ram": 90.45
+    },
+    {
+      "job_id": "J016_ML_INFER",
+      "machine_id": "CHEAP",
+      "pred_duration": 164.09,
+      "pred_cpu": 41.67,
+      "pred_ram": 25.04
+    },
+    {
+      "job_id": "J017_TRANSFORM",
+      "machine_id": "GPU",
+      "pred_duration": 4.79,
+      "pred_cpu": 75.24,
+      "pred_ram": 24.25
+    },
+    {
+      "job_id": "J017_TRANSFORM",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 15.6,
+      "pred_cpu": 59.87,
+      "pred_ram": 19.12
+    },
+    {
+      "job_id": "J017_TRANSFORM",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 10.66,
+      "pred_cpu": 42.89,
+      "pred_ram": 43.5
+    },
+    {
+      "job_id": "J017_TRANSFORM",
+      "machine_id": "CHEAP",
+      "pred_duration": 39.7,
+      "pred_cpu": 36.87,
+      "pred_ram": 12.96
+    },
+    {
+      "job_id": "J018_ML_INFER",
+      "machine_id": "GPU",
+      "pred_duration": 16.88,
+      "pred_cpu": 90.39,
+      "pred_ram": 41.81
+    },
+    {
+      "job_id": "J018_ML_INFER",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 70.49,
+      "pred_cpu": 75.21,
+      "pred_ram": 38.25
+    },
+    {
+      "job_id": "J018_ML_INFER",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 42.41,
+      "pred_cpu": 67.83,
+      "pred_ram": 91.45
+    },
+    {
+      "job_id": "J018_ML_INFER",
+      "machine_id": "CHEAP",
+      "pred_duration": 167.33,
+      "pred_cpu": 42.32,
+      "pred_ram": 22.87
+    },
+    {
+      "job_id": "J019_AUTH",
+      "machine_id": "GPU",
+      "pred_duration": 3.02,
+      "pred_cpu": 60.05,
+      "pred_ram": 16.66
+    },
+    {
+      "job_id": "J019_AUTH",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.08,
+      "pred_cpu": 38.67,
+      "pred_ram": 12.91
+    },
+    {
+      "job_id": "J019_AUTH",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 6.85,
+      "pred_cpu": 32.54,
+      "pred_ram": 31.56
+    },
+    {
+      "job_id": "J019_AUTH",
+      "machine_id": "CHEAP",
+      "pred_duration": 25.93,
+      "pred_cpu": 22.66,
+      "pred_ram": 8.95
+    },
+    {
+      "job_id": "J020_AGGREGATE",
+      "machine_id": "GPU",
+      "pred_duration": 3.54,
+      "pred_cpu": 73.79,
+      "pred_ram": 18.32
+    },
+    {
+      "job_id": "J020_AGGREGATE",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.97,
+      "pred_cpu": 47.9,
+      "pred_ram": 15.17
+    },
+    {
+      "job_id": "J020_AGGREGATE",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 7.78,
+      "pred_cpu": 35.14,
+      "pred_ram": 34.38
+    },
+    {
+      "job_id": "J020_AGGREGATE",
+      "machine_id": "CHEAP",
+      "pred_duration": 32.33,
+      "pred_cpu": 27.2,
+      "pred_ram": 10.69
+    },
+    {
+      "job_id": "J021_TRANSFORM",
+      "machine_id": "GPU",
+      "pred_duration": 4.79,
+      "pred_cpu": 75.24,
+      "pred_ram": 24.25
+    },
+    {
+      "job_id": "J021_TRANSFORM",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 15.6,
+      "pred_cpu": 59.87,
+      "pred_ram": 19.12
+    },
+    {
+      "job_id": "J021_TRANSFORM",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 10.66,
+      "pred_cpu": 42.89,
+      "pred_ram": 43.5
+    },
+    {
+      "job_id": "J021_TRANSFORM",
+      "machine_id": "CHEAP",
+      "pred_duration": 39.7,
+      "pred_cpu": 36.87,
+      "pred_ram": 12.96
+    },
+    {
+      "job_id": "J022_ML_INFER",
+      "machine_id": "GPU",
+      "pred_duration": 18.03,
+      "pred_cpu": 91.22,
+      "pred_ram": 40.71
+    },
+    {
+      "job_id": "J022_ML_INFER",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 55.82,
+      "pred_cpu": 70.71,
+      "pred_ram": 35.76
+    },
+    {
+      "job_id": "J022_ML_INFER",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 44.44,
+      "pred_cpu": 66.84,
+      "pred_ram": 83.08
+    },
+    {
+      "job_id": "J022_ML_INFER",
+      "machine_id": "CHEAP",
+      "pred_duration": 152.8,
+      "pred_cpu": 39.38,
+      "pred_ram": 20.48
+    },
+    {
+      "job_id": "J023_AGGREGATE",
+      "machine_id": "GPU",
+      "pred_duration": 3.46,
+      "pred_cpu": 78.55,
+      "pred_ram": 19.03
+    },
+    {
+      "job_id": "J023_AGGREGATE",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 10.86,
+      "pred_cpu": 48.32,
+      "pred_ram": 13.65
+    },
+    {
+      "job_id": "J023_AGGREGATE",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 7.83,
+      "pred_cpu": 37.52,
+      "pred_ram": 30.99
+    },
+    {
+      "job_id": "J023_AGGREGATE",
+      "machine_id": "CHEAP",
+      "pred_duration": 30.64,
+      "pred_cpu": 27.39,
+      "pred_ram": 9.32
+    },
+    {
+      "job_id": "J024_ML_INFER",
+      "machine_id": "GPU",
+      "pred_duration": 16.88,
+      "pred_cpu": 90.39,
+      "pred_ram": 41.81
+    },
+    {
+      "job_id": "J024_ML_INFER",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 70.49,
+      "pred_cpu": 75.21,
+      "pred_ram": 38.25
+    },
+    {
+      "job_id": "J024_ML_INFER",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 42.41,
+      "pred_cpu": 67.83,
+      "pred_ram": 91.45
+    },
+    {
+      "job_id": "J024_ML_INFER",
+      "machine_id": "CHEAP",
+      "pred_duration": 167.33,
+      "pred_cpu": 42.32,
+      "pred_ram": 22.87
+    },
+    {
+      "job_id": "J025_NOTIFY",
+      "machine_id": "GPU",
+      "pred_duration": 1.57,
+      "pred_cpu": 26.33,
+      "pred_ram": 7.32
+    },
+    {
+      "job_id": "J025_NOTIFY",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 4.63,
+      "pred_cpu": 17.49,
+      "pred_ram": 5.62
+    },
+    {
+      "job_id": "J025_NOTIFY",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 3.49,
+      "pred_cpu": 14.78,
+      "pred_ram": 13.45
+    },
+    {
+      "job_id": "J025_NOTIFY",
+      "machine_id": "CHEAP",
+      "pred_duration": 12.2,
+      "pred_cpu": 10.34,
+      "pred_ram": 3.79
+    },
+    {
+      "job_id": "J026_NOTIFY",
+      "machine_id": "GPU",
+      "pred_duration": 1.43,
+      "pred_cpu": 30.35,
+      "pred_ram": 7.09
+    },
+    {
+      "job_id": "J026_NOTIFY",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 4.46,
+      "pred_cpu": 17.99,
+      "pred_ram": 5.49
+    },
+    {
+      "job_id": "J026_NOTIFY",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 3.32,
+      "pred_cpu": 15.57,
+      "pred_ram": 12.41
+    },
+    {
+      "job_id": "J026_NOTIFY",
+      "machine_id": "CHEAP",
+      "pred_duration": 11.91,
+      "pred_cpu": 10.37,
+      "pred_ram": 3.78
+    },
+    {
+      "job_id": "J027_ML_INFER",
+      "machine_id": "GPU",
+      "pred_duration": 18.03,
+      "pred_cpu": 91.22,
+      "pred_ram": 40.71
+    },
+    {
+      "job_id": "J027_ML_INFER",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 55.82,
+      "pred_cpu": 70.71,
+      "pred_ram": 35.76
+    },
+    {
+      "job_id": "J027_ML_INFER",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 44.44,
+      "pred_cpu": 66.84,
+      "pred_ram": 83.08
+    },
+    {
+      "job_id": "J027_ML_INFER",
+      "machine_id": "CHEAP",
+      "pred_duration": 152.8,
+      "pred_cpu": 39.38,
+      "pred_ram": 20.48
+    },
+    {
+      "job_id": "J028_DB_READ",
+      "machine_id": "GPU",
+      "pred_duration": 5.7,
+      "pred_cpu": 83.22,
+      "pred_ram": 27.14
+    },
+    {
+      "job_id": "J028_DB_READ",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 18.58,
+      "pred_cpu": 55.77,
+      "pred_ram": 20.1
+    },
+    {
+      "job_id": "J028_DB_READ",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 13.25,
+      "pred_cpu": 44.65,
+      "pred_ram": 43.1
+    },
+    {
+      "job_id": "J028_DB_READ",
+      "machine_id": "CHEAP",
+      "pred_duration": 54.37,
+      "pred_cpu": 29.28,
+      "pred_ram": 12.87
+    },
+    {
+      "job_id": "J029_TRANSFORM",
+      "machine_id": "GPU",
+      "pred_duration": 4.59,
+      "pred_cpu": 78.83,
+      "pred_ram": 24.74
+    },
+    {
+      "job_id": "J029_TRANSFORM",
+      "machine_id": "CPU_OPT",
+      "pred_duration": 15.04,
+      "pred_cpu": 59.71,
+      "pred_ram": 19.58
+    },
+    {
+      "job_id": "J029_TRANSFORM",
+      "machine_id": "MEM_OPT",
+      "pred_duration": 10.27,
+      "pred_cpu": 43.32,
+      "pred_ram": 41.79
+    },
+    {
+      "job_id": "J029_TRANSFORM",
+      "machine_id": "CHEAP",
+      "pred_duration": 37.84,
+      "pred_cpu": 36.9,
+      "pred_ram": 13.13
+    }
+  ]
+}

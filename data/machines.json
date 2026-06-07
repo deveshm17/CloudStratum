@@ -1,0 +1,30 @@
+[
+  {
+    "machine_id": "GPU",
+    "cpu_capacity": 96,
+    "ram_capacity": 384,
+    "cost_per_hour": 45,
+    "concurrency": 8
+  },
+  {
+    "machine_id": "CPU_OPT",
+    "cpu_capacity": 64,
+    "ram_capacity": 128,
+    "cost_per_hour": 18,
+    "concurrency": 16
+  },
+  {
+    "machine_id": "MEM_OPT",
+    "cpu_capacity": 32,
+    "ram_capacity": 512,
+    "cost_per_hour": 22,
+    "concurrency": 12
+  },
+  {
+    "machine_id": "CHEAP",
+    "cpu_capacity": 16,
+    "ram_capacity": 64,
+    "cost_per_hour": 8,
+    "concurrency": 20
+  }
+]

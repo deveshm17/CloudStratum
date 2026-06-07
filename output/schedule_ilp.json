@@ -1,0 +1,278 @@
+{
+  "solver": "ILP (OR-Tools CP-SAT)",
+  "total_cost": 158.249125,
+  "makespan": 57.53,
+  "sla_violations": 2,
+  "schedule": [
+    {
+      "job_id": "J000_NOTIFY",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 1.43,
+      "deadline": 37,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J001_NOTIFY",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 1.43,
+      "deadline": 37,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J002_DB_READ",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 5.88,
+      "deadline": 60,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J003_AUTH",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 3.02,
+      "deadline": 60,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J004_AGGREGATE",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 3.57,
+      "deadline": 25,
+      "priority": "critical",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J005_TRANSFORM",
+      "machine_id": "GPU",
+      "start_time": 5.88,
+      "finish_time": 10.67,
+      "deadline": 26,
+      "priority": "critical",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J006_AUTH",
+      "machine_id": "GPU",
+      "start_time": 5.88,
+      "finish_time": 8.99,
+      "deadline": 45,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J007_AGGREGATE",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 3.48,
+      "deadline": 64,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J008_AGGREGATE",
+      "machine_id": "GPU",
+      "start_time": 5.88,
+      "finish_time": 9.42,
+      "deadline": 48,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J009_NOTIFY",
+      "machine_id": "GPU",
+      "start_time": 3.57,
+      "finish_time": 5.15,
+      "deadline": 50,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J010_TRANSFORM",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 4.59,
+      "deadline": 52,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J011_AGGREGATE",
+      "machine_id": "GPU",
+      "start_time": 9.42,
+      "finish_time": 12.96,
+      "deadline": 48,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J012_AUTH",
+      "machine_id": "GPU",
+      "start_time": 5.15,
+      "finish_time": 8.17,
+      "deadline": 60,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J013_DB_READ",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 5.71,
+      "deadline": 80,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J014_ML_INFER",
+      "machine_id": "GPU",
+      "start_time": 10.67,
+      "finish_time": 27.84,
+      "deadline": 120,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J015_DB_READ",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 5.7,
+      "deadline": -1,
+      "priority": "low",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J016_ML_INFER",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 17.17,
+      "deadline": 120,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J017_TRANSFORM",
+      "machine_id": "GPU",
+      "start_time": 5.71,
+      "finish_time": 10.5,
+      "deadline": 26,
+      "priority": "critical",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J018_ML_INFER",
+      "machine_id": "GPU",
+      "start_time": 4.59,
+      "finish_time": 21.47,
+      "deadline": 160,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J019_AUTH",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 3.02,
+      "deadline": 60,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J020_AGGREGATE",
+      "machine_id": "GPU",
+      "start_time": 17.17,
+      "finish_time": 20.71,
+      "deadline": 48,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J021_TRANSFORM",
+      "machine_id": "GPU",
+      "start_time": 21.47,
+      "finish_time": 26.26,
+      "deadline": 26,
+      "priority": "critical",
+      "sla_violated": true
+    },
+    {
+      "job_id": "J022_ML_INFER",
+      "machine_id": "GPU",
+      "start_time": 21.47,
+      "finish_time": 39.5,
+      "deadline": -1,
+      "priority": "low",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J023_AGGREGATE",
+      "machine_id": "GPU",
+      "start_time": 17.17,
+      "finish_time": 20.63,
+      "deadline": -1,
+      "priority": "low",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J024_ML_INFER",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 16.88,
+      "deadline": 160,
+      "priority": "medium",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J025_NOTIFY",
+      "machine_id": "GPU",
+      "start_time": 39.5,
+      "finish_time": 41.07,
+      "deadline": 22,
+      "priority": "critical",
+      "sla_violated": true
+    },
+    {
+      "job_id": "J026_NOTIFY",
+      "machine_id": "GPU",
+      "start_time": 20.63,
+      "finish_time": 22.06,
+      "deadline": 37,
+      "priority": "high",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J027_ML_INFER",
+      "machine_id": "GPU",
+      "start_time": 39.5,
+      "finish_time": 57.53,
+      "deadline": -1,
+      "priority": "low",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J028_DB_READ",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 5.7,
+      "deadline": -1,
+      "priority": "low",
+      "sla_violated": false
+    },
+    {
+      "job_id": "J029_TRANSFORM",
+      "machine_id": "GPU",
+      "start_time": 0.0,
+      "finish_time": 4.59,
+      "deadline": 52,
+      "priority": "high",
+      "sla_violated": false
+    }
+  ]
+}
