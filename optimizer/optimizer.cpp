@@ -1,28 +1,16 @@
 /*
  * optimizer.cpp
  * Cloud Job Scheduler — C++ Optimization Engine
- *
- * Implements:
- *   1. DAG parsing + topological sort + critical path
- *   2. Greedy scheduler (critical path first, best machine per cost)
- *   3. Simulated Annealing (move/swap jobs across machines)
- *
+
  * Input:  optimizer_input.json  (jobs, machines, predictions)
- * Output: schedule.json         (job → machine, start/finish times, cost)
- *
- * Compile:
- *   g++ -std=c++17 -O2 -o optimizer optimizer.cpp
- * Run:
- *   ./optimizer <input_json> <output_json> [sa_iterations] [sa_temp]
+ * Output: schedule.json         (job -> machine, start/finish times, cost)
  */
 
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <algorithm>
 #include <numeric>
 #include <random>
@@ -31,112 +19,12 @@
 #include <iomanip>
 #include <queue>
 #include <cassert>
+#include "json.hpp"
 
 using namespace std;
+using json = nlohmann::json;
 
-// ─── Minimal JSON parser ──────────────────────────────────────────────────────
-// We implement a lightweight parser to avoid external dependencies.
-
-struct JsonVal;
-using JsonObj  = unordered_map<string, JsonVal*>;
-using JsonArr  = vector<JsonVal*>;
-
-struct JsonVal {
-    enum Type { STR, NUM, BOOL_, NIL, OBJ, ARR } type;
-    string      s;
-    double      n = 0;
-    bool        b = false;
-    JsonObj     obj;
-    JsonArr     arr;
-    ~JsonVal() {
-        for (auto& kv : obj) delete kv.second;
-        for (auto  v  : arr) delete v;
-    }
-};
-
-struct Parser {
-    const string& src;
-    size_t pos = 0;
-
-    char peek() { skipWS(); return pos < src.size() ? src[pos] : '\0'; }
-    char get()  { skipWS(); return pos < src.size() ? src[pos++] : '\0'; }
-
-    void skipWS() {
-        while (pos < src.size() && isspace(src[pos])) pos++;
-    }
-
-    string parseStr() {
-        assert(get() == '"');
-        string res;
-        while (pos < src.size()) {
-            char c = src[pos++];
-            if (c == '"') break;
-            if (c == '\\') { c = src[pos++]; }
-            res += c;
-        }
-        return res;
-    }
-
-    double parseNum() {
-        size_t start = pos;
-        if (src[pos] == '-') pos++;
-        while (pos < src.size() && (isdigit(src[pos]) || src[pos] == '.' || src[pos] == 'e' || src[pos] == 'E' || src[pos] == '+' || src[pos] == '-'))
-            pos++;
-        return stod(src.substr(start, pos - start));
-    }
-
-    JsonVal* parseVal() {
-        char c = peek();
-        auto* v = new JsonVal();
-        if (c == '"') {
-            v->type = JsonVal::STR;
-            v->s    = parseStr();
-        } else if (c == '{') {
-            v->type = JsonVal::OBJ;
-            get(); // '{'
-            while (peek() != '}') {
-                string key = parseStr();
-                skipWS(); assert(get() == ':');
-                v->obj[key] = parseVal();
-                skipWS();
-                if (peek() == ',') get();
-            }
-            get(); // '}'
-        } else if (c == '[') {
-            v->type = JsonVal::ARR;
-            get(); // '['
-            while (peek() != ']') {
-                v->arr.push_back(parseVal());
-                skipWS();
-                if (peek() == ',') get();
-            }
-            get(); // ']'
-        } else if (c == 't') {
-            v->type = JsonVal::BOOL_; v->b = true;  pos += 4;
-        } else if (c == 'f') {
-            v->type = JsonVal::BOOL_; v->b = false; pos += 5;
-        } else if (c == 'n') {
-            v->type = JsonVal::NIL; pos += 4;
-        } else {
-            v->type = JsonVal::NUM;
-            v->n    = parseNum();
-        }
-        return v;
-    }
-};
-
-JsonVal* parseJson(const string& src) {
-    Parser p{src};
-    return p.parseVal();
-}
-
-// Helper accessors
-string   jStr(JsonVal* v)          { return v->s; }
-double   jNum(JsonVal* v)          { return v->n; }
-int      jInt(JsonVal* v)          { return (int)v->n; }
-JsonVal* jGet(JsonVal* v, const string& k) { return v->obj.count(k) ? v->obj.at(k) : nullptr; }
-
-// ─── Data structures ──────────────────────────────────────────────────────────
+// --- Data structures ----------------------------------------------------------
 
 struct Machine {
     string machine_id;
@@ -149,15 +37,14 @@ struct Machine {
 struct Job {
     string         job_id;
     string         priority;
-    double         deadline;      // -1 = none
+    double         deadline;
     vector<string> dep_ids;
 
-    // Graph indices
     int            idx;
-    vector<int>    deps;          // indices into jobs array
+    vector<int>    deps;
     vector<int>    successors;
 
-    double cp_length = 0;         // critical path length from this node
+    double cp_length = 0;
 };
 
 struct Prediction {
@@ -166,10 +53,9 @@ struct Prediction {
     double ram;
 };
 
-// predictions[job_idx][machine_idx]
-using PredMatrix = vector<vector<Prediction>>;
+using PredMatrix = vector<vector<Prediction>>;x
 
-// ─── Schedule state ───────────────────────────────────────────────────────────
+// --- Schedule state -----------------------------------------------------------
 
 struct Assignment {
     int    machine_idx;
@@ -178,13 +64,13 @@ struct Assignment {
 };
 
 struct Schedule {
-    vector<Assignment> assignments;   // one per job
-    double makespan   = 0;
-    double total_cost = 0;
+    vector<Assignment> assignments;
+    double makespan       = 0;
+    double total_cost     = 0;
     int    sla_violations = 0;
 };
 
-// ─── Global data ──────────────────────────────────────────────────────────────
+// --- Global data --------------------------------------------------------------
 
 vector<Machine> machines;
 vector<Job>     jobs;
@@ -192,7 +78,6 @@ PredMatrix      preds;
 
 int N, M;
 
-// Priority weights (higher = more important = schedule earlier)
 double priorityWeight(const string& p) {
     if (p == "critical") return 4.0;
     if (p == "high")     return 3.0;
@@ -200,7 +85,7 @@ double priorityWeight(const string& p) {
     return 1.0;
 }
 
-// ─── 1. DAG: Topological Sort ─────────────────────────────────────────────────
+// --- 1. DAG: Topological Sort -------------------------------------------------
 
 vector<int> topoSort() {
     vector<int> indegree(N, 0);
@@ -216,25 +101,19 @@ vector<int> topoSort() {
     while (!q.empty()) {
         int u = q.front(); q.pop();
         order.push_back(u);
-        for (int s : jobs[u].successors) {
+        for (int s : jobs[u].successors)
             if (--indegree[s] == 0) q.push(s);
-        }
     }
     assert((int)order.size() == N && "DAG has a cycle!");
     return order;
 }
 
-// ─── 2. Critical Path ─────────────────────────────────────────────────────────
-// cp_length[i] = max over all machines of duration[i][m],
-//                then propagated forward through successors.
-// We use the average duration across machines as the edge weight.
+// --- 2. Critical Path ---------------------------------------------------------
 
 void computeCriticalPath(const vector<int>& topo) {
-    // Process in reverse topological order
     for (int i = (int)topo.size() - 1; i >= 0; i--) {
         int u = topo[i];
 
-        // Average duration across machines as job weight
         double avg_dur = 0;
         for (int m = 0; m < M; m++) avg_dur += preds[u][m].duration;
         avg_dur /= M;
@@ -247,47 +126,94 @@ void computeCriticalPath(const vector<int>& topo) {
     }
 }
 
-// ─── 3. Schedule evaluation ───────────────────────────────────────────────────
+// --- 3. Resource-aware machine availability -----------------------------------
+//   running jobs < concurrency
+//   used_cpu + req_cpu <= cpu_capacity
+//   used_ram + req_ram <= ram_capacity
+
+
+struct RunningJob {
+    double finish_time;
+    double cpu;
+    double ram;
+};
+
+double machineAvailableAt(const vector<RunningJob>& running,
+                           int concurrency,
+                           double cpu_cap, double ram_cap,
+                           double req_cpu, double req_ram,
+                           double earliest_dep) {
+
+    vector<double> candidates = { earliest_dep };
+    for (const auto& rj : running)
+        if (rj.finish_time > earliest_dep)
+            candidates.push_back(rj.finish_time);
+    sort(candidates.begin(), candidates.end());
+
+    for (double t : candidates) {
+        int    used_slots = 0;
+        double used_cpu   = 0.0;
+        double used_ram   = 0.0;
+        for (const auto& rj : running) {
+            if (rj.finish_time > t) {
+                used_slots++;
+                used_cpu += rj.cpu;
+                used_ram += rj.ram;
+            }
+        }
+        if (used_slots  < concurrency   &&
+            used_cpu + req_cpu <= cpu_cap &&
+            used_ram + req_ram <= ram_cap)
+            return t;
+    }
+
+    // All slots or resources busy past every finish_time — wait for all to clear
+    double latest = earliest_dep;
+    for (const auto& rj : running)
+        latest = max(latest, rj.finish_time);
+    return latest;
+}
+
+// --- 4. Schedule evaluation ---------------------------------------------------
 
 Schedule evaluateSchedule(const vector<int>& machine_assign) {
     Schedule sched;
     sched.assignments.resize(N);
 
-    // Compute start/finish times respecting dependencies
-    // Process in topological order
     vector<int> topo = topoSort();
 
-    // Track per-machine current available time (simple: ignore concurrency for speed)
-    vector<double> machine_avail(M, 0.0);
+    // Per-machine list of currently running jobs (for resource tracking)
+    vector<vector<RunningJob>> machine_running(M);
     vector<double> finish(N, 0.0);
 
     for (int u : topo) {
         int m = machine_assign[u];
 
-        // Earliest start: after all predecessors finish
-        double earliest = 0;
+        double earliest_dep = 0;
         for (int d : jobs[u].deps)
-            earliest = max(earliest, finish[d]);
+            earliest_dep = max(earliest_dep, finish[d]);
 
-        // Also after machine is available
-        earliest = max(earliest, machine_avail[m]);
+        double req_cpu = preds[u][m].cpu;
+        double req_ram = preds[u][m].ram;
 
-        double dur = preds[u][m].duration;
-        double fin = earliest + dur;
+        double start = machineAvailableAt(machine_running[m],
+                                          machines[m].concurrency,
+                                          machines[m].cpu_capacity,
+                                          machines[m].ram_capacity,
+                                          req_cpu, req_ram,
+                                          earliest_dep);
+        double fin = start + preds[u][m].duration;
 
-        sched.assignments[u] = {m, earliest, fin};
+        sched.assignments[u] = {m, start, fin};
         finish[u] = fin;
-        machine_avail[m] = fin;  // simplified: sequential per machine
+        machine_running[m].push_back({fin, req_cpu, req_ram});
 
         sched.makespan = max(sched.makespan, fin);
 
-        // SLA check
         if (jobs[u].deadline > 0 && fin > jobs[u].deadline)
             sched.sla_violations++;
     }
 
-    // Cost: sum of (cost_per_hour * makespan/3600) for each active machine
-    // Simplified: count active machines × cost × (makespan in hours)
     vector<bool> active(M, false);
     for (int i = 0; i < N; i++) active[machine_assign[i]] = true;
 
@@ -295,11 +221,7 @@ Schedule evaluateSchedule(const vector<int>& machine_assign) {
     for (int m = 0; m < M; m++)
         if (active[m]) sched.total_cost += machines[m].cost_per_hour * hours;
 
-    // Penalty weights
-    double alpha = 1.0;   // makespan weight
-    double beta  = 1.0;   // machine cost weight
-    double gamma = 50.0;  // SLA violation penalty per violation
-
+    double alpha = 1.0, beta = 1.0, gamma = 50.0;
     sched.total_cost = alpha * sched.makespan
                      + beta  * sched.total_cost
                      + gamma * sched.sla_violations;
@@ -307,65 +229,82 @@ Schedule evaluateSchedule(const vector<int>& machine_assign) {
     return sched;
 }
 
-// ─── 4. Greedy Scheduler ──────────────────────────────────────────────────────
+// --- 5. Greedy Scheduler ----------------------------------------
 
 vector<int> greedySchedule() {
-    vector<int>  assign(N, 0);
-    vector<int>  topo = topoSort();
+    vector<int> assign(N, 0);
 
-    // Sort by critical path length DESC × priority weight DESC
-    vector<int> sorted_topo = topo;
-    sort(sorted_topo.begin(), sorted_topo.end(), [](int a, int b) {
-        return jobs[a].cp_length * priorityWeight(jobs[a].priority)
-             > jobs[b].cp_length * priorityWeight(jobs[b].priority);
-    });
+    vector<int> indegree(N, 0);
+    for (int i = 0; i < N; i++)
+        for (int d : jobs[i].deps)
+            indegree[i]++;
+
+    // Ready queue: max-heap on (cp_length x priorityWeight)
+    using T = pair<double, int>;
+    priority_queue<T> ready;
+    for (int i = 0; i < N; i++)
+        if (indegree[i] == 0)
+            ready.push({ jobs[i].cp_length * priorityWeight(jobs[i].priority), i });
 
     vector<double> finish(N, 0.0);
-    vector<double> machine_avail(M, 0.0);
+    vector<vector<RunningJob>> machine_running(M);
 
-    // Process in topological order (not sorted — must respect deps)
-    for (int u : topo) {
-        double earliest = 0;
+    while (!ready.empty()) {
+        auto [score, u] = ready.top(); ready.pop();
+
+        double earliest_dep = 0;
         for (int d : jobs[u].deps)
-            earliest = max(earliest, finish[d]);
+            earliest_dep = max(earliest_dep, finish[d]);
 
-        // Pick machine with best score:
-        // score = finish_time_on_m + cost_factor
-        // Lower is better
+        // Pick best machine: lowest (finish_time + cost_factor x cp_weight) x urgency
         int    best_m     = 0;
         double best_score = numeric_limits<double>::max();
 
         for (int m = 0; m < M; m++) {
-            // Resource check (simplified: just duration feasibility)
-            double avail  = max(earliest, machine_avail[m]);
-            double fin    = avail + preds[u][m].duration;
+            double req_cpu = preds[u][m].cpu;
+            double req_ram = preds[u][m].ram;
 
-            // Normalize cost contribution
-            double cost_factor = machines[m].cost_per_hour / 45.0;  // normalize to GPU=1
+            double start = machineAvailableAt(machine_running[m],
+                                              machines[m].concurrency,
+                                              machines[m].cpu_capacity,
+                                              machines[m].ram_capacity,
+                                              req_cpu, req_ram,
+                                              earliest_dep);
+            double fin         = start + preds[u][m].duration;
+            double cost_factor = machines[m].cost_per_hour / 45.0;
 
-            // SLA urgency: if critical and deadline tight, prefer fast machine
-            double urgency = 1.0;
-            if (jobs[u].deadline > 0 && jobs[u].priority == "critical")
-                urgency = 0.5;  // halve score → prefer faster machines
+            // High cp_length jobs: reduce cost penalty to prefer speed
+            double cp_weight = 1.0 / (1.0 + jobs[u].cp_length);
+            double urgency = (jobs[u].deadline > 0)
+                 ? 1.0 / jobs[u].priority_weight
+                 : 1.0;
 
-            double score = (fin + cost_factor * 10.0) * urgency;
-
-            if (score < best_score) {
-                best_score = score;
-                best_m     = m;
-            }
+            double mscore = (fin + cost_factor * 10.0 * cp_weight) * urgency;
+            if (mscore < best_score) { best_score = mscore; best_m = m; }
         }
 
         assign[u] = best_m;
-        double avail = max(earliest, machine_avail[best_m]);
-        finish[u]    = avail + preds[u][best_m].duration;
-        machine_avail[best_m] = finish[u];
+
+        double req_cpu = preds[u][best_m].cpu;
+        double req_ram = preds[u][best_m].ram;
+        double start   = machineAvailableAt(machine_running[best_m],
+                                            machines[best_m].concurrency,
+                                            machines[best_m].cpu_capacity,
+                                            machines[best_m].ram_capacity,
+                                            req_cpu, req_ram,
+                                            earliest_dep);
+        finish[u] = start + preds[u][best_m].duration;
+        machine_running[best_m].push_back({finish[u], req_cpu, req_ram});
+
+        for (int s : jobs[u].successors)
+            if (--indegree[s] == 0)
+                ready.push({ jobs[s].cp_length * priorityWeight(jobs[s].priority), s });
     }
 
     return assign;
 }
 
-// ─── 5. Simulated Annealing ───────────────────────────────────────────────────
+// --- 6. Simulated Annealing ---------------------------------------------------
 
 vector<int> simulatedAnnealing(
     vector<int> init_assign,
@@ -379,28 +318,21 @@ vector<int> simulatedAnnealing(
     uniform_int_distribution<int> rnd_mac(0, M - 1);
     uniform_real_distribution<double> rnd01(0.0, 1.0);
 
-    vector<int> current  = init_assign;
+    vector<int> current   = init_assign;
     vector<int> best_asgn = init_assign;
 
-    Schedule cur_sched   = evaluateSchedule(current);
-    Schedule best_sched  = cur_sched;
+    Schedule cur_sched  = evaluateSchedule(current);
+    Schedule best_sched = cur_sched;
 
     double T = T_init;
 
     for (int iter = 0; iter < max_iter && T > T_min; iter++) {
-
         vector<int> candidate = current;
 
-        // Choose move: 70% reassign, 30% swap
         if (rnd01(rng) < 0.70) {
-            // Reassign: move a random job to a random different machine
-            int job = rnd_job(rng);
-            int new_m = rnd_mac(rng);
-            candidate[job] = new_m;
+            candidate[rnd_job(rng)] = rnd_mac(rng);
         } else {
-            // Swap: exchange machine assignments of two random jobs
-            int j1 = rnd_job(rng);
-            int j2 = rnd_job(rng);
+            int j1 = rnd_job(rng), j2 = rnd_job(rng);
             while (j2 == j1) j2 = rnd_job(rng);
             swap(candidate[j1], candidate[j2]);
         }
@@ -428,86 +360,44 @@ vector<int> simulatedAnnealing(
     return best_asgn;
 }
 
-// ─── 6. JSON output ───────────────────────────────────────────────────────────
-
-void writeOutput(const vector<int>& assign, const string& out_path) {
-    Schedule sched = evaluateSchedule(assign);
-
-    ofstream f(out_path);
-    f << fixed << setprecision(6);
-    f << "{\n";
-    f << "  \"total_cost\": "     << sched.total_cost     << ",\n";
-    f << "  \"makespan\": "       << sched.makespan       << ",\n";
-    f << "  \"sla_violations\": " << sched.sla_violations << ",\n";
-    f << "  \"schedule\": [\n";
-
-    for (int i = 0; i < N; i++) {
-        const auto& a = sched.assignments[i];
-        f << "    {"
-          << "\"job_id\": \""      << jobs[i].job_id            << "\", "
-          << "\"machine_id\": \""  << machines[a.machine_idx].machine_id << "\", "
-          << "\"start_time\": "    << a.start_time              << ", "
-          << "\"finish_time\": "   << a.finish_time             << ", "
-          << "\"deadline\": "      << jobs[i].deadline          << ", "
-          << "\"priority\": \""    << jobs[i].priority          << "\""
-          << "}";
-        if (i < N - 1) f << ",";
-        f << "\n";
-    }
-
-    f << "  ]\n}\n";
-    f.close();
-    cerr << "[OUT] Schedule written to " << out_path << "\n";
-}
-
-// ─── 7. Load input ────────────────────────────────────────────────────────────
+// --- 7. Load input ------------------------------------------------------------
 
 void loadInput(const string& path) {
     ifstream f(path);
-    if (!f.is_open()) {
-        cerr << "Error: cannot open " << path << "\n";
-        exit(1);
-    }
-    string src((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
+    if (!f.is_open()) { cerr << "Error: cannot open " << path << "\n"; exit(1); }
+
+    json root = json::parse(f);
     f.close();
 
-    JsonVal* root = parseJson(src);
-
-    // Load machines
-    for (auto* mv : root->obj["machines"]->arr) {
+    for (const auto& mv : root["machines"]) {
         Machine mc;
-        mc.machine_id    = jStr(jGet(mv, "machine_id"));
-        mc.cpu_capacity  = jNum(jGet(mv, "cpu_capacity"));
-        mc.ram_capacity  = jNum(jGet(mv, "ram_capacity"));
-        mc.cost_per_hour = jNum(jGet(mv, "cost_per_hour"));
-        mc.concurrency   = jInt(jGet(mv, "concurrency"));
+        mc.machine_id    = mv["machine_id"];
+        mc.cpu_capacity  = mv["cpu_capacity"];
+        mc.ram_capacity  = mv["ram_capacity"];
+        mc.cost_per_hour = mv["cost_per_hour"];
+        mc.concurrency   = mv["concurrency"];
         machines.push_back(mc);
     }
     M = machines.size();
 
-    // Build machine index map
     unordered_map<string, int> machineIdx;
     for (int i = 0; i < M; i++) machineIdx[machines[i].machine_id] = i;
 
-    // Load jobs
     unordered_map<string, int> jobIdx;
-    JsonArr& jarr = root->obj["jobs"]->arr;
-    N = jarr.size();
+    N = root["jobs"].size();
     jobs.resize(N);
 
     for (int i = 0; i < N; i++) {
-        auto* jv = jarr[i];
-        jobs[i].job_id   = jStr(jGet(jv, "job_id"));
-        jobs[i].priority = jStr(jGet(jv, "priority"));
-        jobs[i].deadline = jNum(jGet(jv, "deadline"));
+        const auto& jv   = root["jobs"][i];
+        jobs[i].job_id   = jv["job_id"];
+        jobs[i].priority = jv["priority"];
+        jobs[i].deadline = jv["deadline"];
         jobs[i].idx      = i;
         jobIdx[jobs[i].job_id] = i;
-
-        auto* deps = jGet(jv, "dependencies");
-        if (deps) for (auto* d : deps->arr) jobs[i].dep_ids.push_back(jStr(d));
+        for (const auto& d : jv["dependencies"])
+            jobs[i].dep_ids.push_back(d.get<string>());
     }
 
-    // Resolve dependency indices + build successor lists
     for (int i = 0; i < N; i++) {
         for (const auto& dep_id : jobs[i].dep_ids) {
             if (jobIdx.count(dep_id)) {
@@ -518,25 +408,52 @@ void loadInput(const string& path) {
         }
     }
 
-    // Load predictions
     preds.assign(N, vector<Prediction>(M));
-    for (auto* pv : root->obj["predictions"]->arr) {
-        string jid = jStr(jGet(pv, "job_id"));
-        string mid = jStr(jGet(pv, "machine_id"));
+    for (const auto& pv : root["predictions"]) {
+        string jid = pv["job_id"];
+        string mid = pv["machine_id"];
         if (!jobIdx.count(jid) || !machineIdx.count(mid)) continue;
         int ji = jobIdx[jid];
         int mi = machineIdx[mid];
-        preds[ji][mi].duration = jNum(jGet(pv, "pred_duration"));
-        preds[ji][mi].cpu      = jNum(jGet(pv, "pred_cpu"));
-        preds[ji][mi].ram      = jNum(jGet(pv, "pred_ram"));
+        preds[ji][mi].duration = pv["pred_duration"];
+        preds[ji][mi].cpu      = pv["pred_cpu"];
+        preds[ji][mi].ram      = pv["pred_ram"];
     }
-
-    delete root;
 
     cerr << "[LOAD] " << N << " jobs, " << M << " machines loaded.\n";
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// --- 8. Write output ----------------------------------------------------------
+
+void writeOutput(const vector<int>& assign, const string& out_path) {
+    Schedule sched = evaluateSchedule(assign);
+
+    json output;
+    output["total_cost"]     = sched.total_cost;
+    output["makespan"]       = sched.makespan;
+    output["sla_violations"] = sched.sla_violations;
+
+    json schedule = json::array();
+    for (int i = 0; i < N; i++) {
+        const auto& a = sched.assignments[i];
+        schedule.push_back({
+            {"job_id",      jobs[i].job_id},
+            {"machine_id",  machines[a.machine_idx].machine_id},
+            {"start_time",  a.start_time},
+            {"finish_time", a.finish_time},
+            {"deadline",    jobs[i].deadline},
+            {"priority",    jobs[i].priority},
+        });
+    }
+    output["schedule"] = schedule;
+
+    ofstream f(out_path);
+    f << output.dump(2) << "\n";
+    f.close();
+    cerr << "[OUT] Schedule written to " << out_path << "\n";
+}
+
+// --- Main ---------------------------------------------------------------------
 
 int main(int argc, char* argv[]) {
     string input_path  = "data/optimizer_input.json";
@@ -551,23 +468,17 @@ int main(int argc, char* argv[]) {
 
     loadInput(input_path);
 
-    // Critical path
     vector<int> topo = topoSort();
     computeCriticalPath(topo);
-
     cerr << "[CP] Critical path lengths computed.\n";
 
-    // Greedy
     vector<int> greedy_assign = greedySchedule();
     Schedule    greedy_sched  = evaluateSchedule(greedy_assign);
     cerr << "[GREEDY] Cost: " << fixed << setprecision(4) << greedy_sched.total_cost
          << "  makespan: " << greedy_sched.makespan
          << "s  SLA violations: " << greedy_sched.sla_violations << "\n";
 
-    // SA improvement
     vector<int> sa_assign = simulatedAnnealing(greedy_assign, sa_iter, sa_temp);
-
-    // Write output
     writeOutput(sa_assign, output_path);
 
     return 0;
