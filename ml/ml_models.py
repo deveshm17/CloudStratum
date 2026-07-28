@@ -32,30 +32,23 @@ MACHINE_SPEED = {"GPU": 0.3, "CPU_OPT": 1.0, "MEM_OPT": 0.7, "CHEAP": 2.5}
 PRIORITY_MAP  = {"critical": 4, "high": 3, "medium": 2, "low": 1}
 
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Construct feature matrix from raw history rows.
-    All categorical columns are label-encoded.
-    """
+    # Construct feature matrix from raw history rows.
     fe = pd.DataFrame()
 
-    # Encode categoricals
     fe["job_type_enc"]    = LabelEncoder().fit_transform(df["job_type"])
     fe["machine_enc"]     = LabelEncoder().fit_transform(df["machine_id"])
     fe["priority_enc"]    = df["priority"].map(PRIORITY_MAP).fillna(1)
 
-    # Numeric features
     fe["base_duration"]   = df["base_duration"].astype(float)
     fe["hour_of_day"]     = df["hour_of_day"].astype(float)
     fe["concurrent_load"] = df["concurrent_load"].astype(float)
 
-    # Cyclical time encoding (hour as sin/cos)
+
     fe["hour_sin"] = np.sin(2 * np.pi * df["hour_of_day"] / 24)
     fe["hour_cos"] = np.cos(2 * np.pi * df["hour_of_day"] / 24)
 
-    # Machine speed proxy
     fe["machine_speed"] = df["machine_id"].map(MACHINE_SPEED).fillna(1.0)
 
-    # Interaction: base_duration × machine_speed
     fe["dur_speed_interact"] = fe["base_duration"] * fe["machine_speed"]
 
     return fe
@@ -106,10 +99,7 @@ def load_model(name: str):
 def predict_all(jobs: list, machines: list,
                 model_dur, model_cpu, model_ram,
                 label_enc_job, label_enc_mac) -> list:
-    """
-    For every (job, machine) pair, predict duration, cpu, ram.
-    Returns list of dicts compatible with predictions.csv format.
-    """
+
     rows = []
 
     MACHINE_MAP = {m["machine_id"]: m for m in machines}
@@ -119,7 +109,6 @@ def predict_all(jobs: list, machines: list,
         for machine in machines:
             mid = machine["machine_id"]
 
-            # Build a single-row feature dict
             jtype_enc = label_enc_job.transform([job.get("job_type", "AUTH")])[0] \
                         if job.get("job_type") else 0
             mac_enc   = label_enc_mac.transform([mid])[0]
@@ -144,7 +133,6 @@ def predict_all(jobs: list, machines: list,
             cpu = float(model_cpu.predict(feat)[0])
             ram = float(model_ram.predict(feat)[0])
 
-            # Clamp to sensible ranges
             dur = max(0.5, dur)
             cpu = min(max(1.0, cpu), 99.0)
             ram = min(max(0.5, ram), machine["ram_capacity"] * 0.95)
@@ -173,13 +161,11 @@ def train_and_predict():
     # Feature matrix
     X = build_features(df)
 
-    # Fit label encoders (reuse same fit for prediction)
     le_job = LabelEncoder().fit(df["job_type"])
     le_mac = LabelEncoder().fit(df["machine_id"])
     X["job_type_enc"] = le_job.transform(df["job_type"])
     X["machine_enc"]  = le_mac.transform(df["machine_id"])
 
-    # Targets
     y_dur = df["duration"].astype(float)
     y_cpu = df["cpu_usage"].astype(float)
     y_ram = df["ram_usage"].astype(float)
